@@ -26,7 +26,6 @@ export function DoveSearchSelect({
   const [selectedTowerId, setSelectedTowerId] = useState(initialCache?.selected || '');
   const [checkedOk, setCheckedOk] = useState(initialCache?.checked_ok || false);
   const [matches, setMatches] = useState<DoveMatch[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
 
   const lookupMutation = useMutation({
     mutationFn: () =>
@@ -38,7 +37,6 @@ export function DoveSearchSelect({
       }),
     onSuccess: (data) => {
       setMatches(data);
-      setHasSearched(true);
       // Auto-select first match if nothing selected
       if (data.length > 0 && !selectedTowerId) {
         const firstTowerId = data[0].TowerID;
@@ -56,17 +54,12 @@ export function DoveSearchSelect({
   // Load matches from cache if available
   useEffect(() => {
     if (initialCache && initialCache.selected) {
-      setHasSearched(true);
-      // Note: We would need to store matches in cache to fully restore them
-      // For now, trigger a search if we have cached data but no matches
-      if (matches.length === 0) {
-        lookupMutation.mutate();
-      }
+      // Trigger a search to populate matches from cache
+      lookupMutation.mutate();
     }
   }, []);
 
   const handleSearch = () => {
-    setHasSearched(false);
     lookupMutation.mutate();
   };
 
@@ -128,7 +121,7 @@ export function DoveSearchSelect({
         </Button>
       </div>
 
-      {hasSearched && matches.length > 0 && (
+      {matches.length > 0 && (
         <div className="space-y-2">
           <Select value={selectedTowerId} onValueChange={handleSelectionChange}>
             <SelectTrigger>
@@ -170,7 +163,13 @@ export function DoveSearchSelect({
         </div>
       )}
 
-      {hasSearched && matches.length === 0 && !lookupMutation.isPending && (
+      {lookupMutation.isError && (
+        <div className="text-sm text-red-600">
+          Error searching for towers. Please try again.
+        </div>
+      )}
+
+      {lookupMutation.isSuccess && matches.length === 0 && (
         <div className="text-sm text-muted-foreground">
           No matches found. Try a different search term.
         </div>
