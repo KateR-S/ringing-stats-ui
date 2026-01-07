@@ -26,6 +26,10 @@ export interface Performance {
   [key: string]: any;
 }
 
+export interface ParsePerformancesResponse {
+  performances: Performance[];
+}
+
 export interface DeduplicateResponse {
   towers: Tower[];
   cache_key: string;

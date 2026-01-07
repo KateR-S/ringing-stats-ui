@@ -4,6 +4,7 @@ import type {
   DoveMatch,
   CacheEntry,
   Performance,
+  ParsePerformancesResponse,
   DeduplicateResponse,
   DoveLookupRequest,
   CacheData,
@@ -46,11 +47,11 @@ export const api = {
   },
 
   performances: {
-    parse: async (file: File): Promise<Performance[]> => {
+    parse: async (file: File): Promise<ParsePerformancesResponse> => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await apiClient.post<Performance[]>(
+      const response = await apiClient.post<ParsePerformancesResponse>(
         '/api/performances/parse',
         formData,
         {

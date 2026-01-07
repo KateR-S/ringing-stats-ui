@@ -18,7 +18,15 @@ export default function PerformancesPage() {
   const uploadMutation = useMutation({
     mutationFn: (file: File) => api.performances.parse(file),
     onSuccess: (data) => {
-      setPerformances(data);
+      // Extract performances array from response object
+      if (data && typeof data === 'object' && 'performances' in data && Array.isArray(data.performances)) {
+        setPerformances(data.performances);
+      } else if (Array.isArray(data)) {
+        setPerformances(data);
+      } else {
+        console.error('Unexpected response format:', typeof data, data);
+        setPerformances([]);
+      }
     },
   });
 

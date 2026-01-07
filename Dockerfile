@@ -9,6 +9,9 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
+# Make sure package-lock and package are in sync
+RUN npm i --package-lock-only
+
 # Install dependencies
 RUN npm ci
 
