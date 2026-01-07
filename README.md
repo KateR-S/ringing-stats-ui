@@ -26,11 +26,14 @@ A modern Next.js frontend application for the bellboard tower scraper, providing
 
 - Node.js 18+ 
 - npm or yarn
+- Docker and Docker Compose (for containerized deployment)
 - Access to the bellboard-tower-scraper backend API
 
 ## Getting Started
 
-### Installation
+### Option 1: Local Development
+
+#### Installation
 
 1. Clone the repository:
 ```bash
@@ -53,7 +56,7 @@ Edit `.env` and set your API URL:
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-### Development
+#### Development
 
 Run the development server:
 ```bash
@@ -62,7 +65,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Building for Production
+#### Building for Production
 
 Build the application:
 ```bash
@@ -72,6 +75,59 @@ npm run build
 Start the production server:
 ```bash
 npm start
+```
+
+### Option 2: Docker
+
+#### Using Docker Compose (Recommended)
+
+For production deployment:
+```bash
+# Build and start the container
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the container
+docker-compose down
+```
+
+For development with hot-reload:
+```bash
+# Start development container
+docker-compose --profile dev up -d ringing-stats-ui-dev
+
+# View logs
+docker-compose logs -f ringing-stats-ui-dev
+
+# Stop the container
+docker-compose --profile dev down
+```
+
+Configure the backend API URL by setting the environment variable:
+```bash
+export NEXT_PUBLIC_API_URL=http://your-backend-api:8000
+docker-compose up -d
+```
+
+Or create a `.env` file in the project root:
+```env
+NEXT_PUBLIC_API_URL=http://your-backend-api:8000
+```
+
+#### Using Docker directly
+
+Build the image:
+```bash
+docker build -t ringing-stats-ui .
+```
+
+Run the container:
+```bash
+docker run -p 3000:3000 \
+  -e NEXT_PUBLIC_API_URL=http://localhost:8000 \
+  ringing-stats-ui
 ```
 
 ## Project Structure
@@ -182,8 +238,39 @@ This is a standard Next.js application and can be deployed to any platform that 
 1. **Make changes**: Edit files in `app/`, `components/`, or `lib/`
 2. **Hot reload**: Changes appear instantly in development mode
 3. **Type check**: TypeScript provides real-time error checking
-4. **Build**: Run `npm run build` to check for production issues
-5. **Lint**: Run `npm run lint` to check code quality
+4. **Format code**: Run `npm run format` to format all files
+5. **Check formatting**: Run `npm run format:check` to verify formatting
+6. **Build**: Run `npm run build` to check for production issues
+7. **Lint**: Run `npm run lint` to check code quality
+
+## Code Standards
+
+This project follows standard coding conventions:
+
+- **Formatting**: Prettier is configured for consistent code style
+- **Linting**: ESLint with Next.js recommended rules
+- **TypeScript**: Strict mode enabled for type safety
+- **Directory Structure**: Standard Next.js App Router structure
+  - `app/` - Pages and routes
+  - `components/` - Reusable React components
+  - `lib/` - Utility functions and API clients
+  - `public/` - Static assets
+
+### Running Code Quality Checks
+
+```bash
+# Format all files
+npm run format
+
+# Check formatting without modifying files
+npm run format:check
+
+# Run linter
+npm run lint
+
+# Type check
+npx tsc --noEmit
+```
 
 ## Browser Support
 
