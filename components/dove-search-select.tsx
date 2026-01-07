@@ -13,7 +13,7 @@ interface DoveSearchSelectProps {
   tower: Tower;
   cacheKey: string;
   initialCache?: CacheEntry;
-  onUpdate: (cacheKey: string, entry: CacheEntry) => void;
+  onUpdate: (cacheKey: string, entry: CacheEntry, matches: DoveMatch[]) => void;
 }
 
 export function DoveSearchSelect({
@@ -26,6 +26,7 @@ export function DoveSearchSelect({
   const [selectedTowerId, setSelectedTowerId] = useState(initialCache?.selected || '');
   const [checkedOk, setCheckedOk] = useState(initialCache?.checked_ok || false);
   const [matches, setMatches] = useState<DoveMatch[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const lookupMutation = useMutation({
     mutationFn: () =>
@@ -37,20 +38,35 @@ export function DoveSearchSelect({
       }),
     onSuccess: (data) => {
       setMatches(data);
+      setHasSearched(true);
+      // Auto-select first match if nothing selected
       if (data.length > 0 && !selectedTowerId) {
-        setSelectedTowerId(data[0].TowerID);
+        const firstTowerId = data[0].TowerID;
+        setSelectedTowerId(firstTowerId);
+        const entry: CacheEntry = {
+          search: searchQuery,
+          selected: firstTowerId,
+          checked_ok: false,
+        };
+        onUpdate(cacheKey, entry, data);
       }
     },
   });
 
-  // Auto-search on mount if no initial cache
+  // Load matches from cache if available
   useEffect(() => {
-    if (!initialCache && searchQuery) {
-      lookupMutation.mutate();
+    if (initialCache && initialCache.selected) {
+      setHasSearched(true);
+      // Note: We would need to store matches in cache to fully restore them
+      // For now, trigger a search if we have cached data but no matches
+      if (matches.length === 0) {
+        lookupMutation.mutate();
+      }
     }
   }, []);
 
   const handleSearch = () => {
+    setHasSearched(false);
     lookupMutation.mutate();
   };
 
@@ -61,7 +77,7 @@ export function DoveSearchSelect({
       selected: towerId,
       checked_ok: checkedOk,
     };
-    onUpdate(cacheKey, entry);
+    onUpdate(cacheKey, entry, matches);
   };
 
   const handleCheckOk = () => {
@@ -71,11 +87,19 @@ export function DoveSearchSelect({
       selected: selectedTowerId,
       checked_ok: true,
     };
-    onUpdate(cacheKey, entry);
+    onUpdate(cacheKey, entry, matches);
   };
 
   const bestMatch = matches[0];
   const showWarning = bestMatch && bestMatch.score < 90 && !checkedOk;
+
+  // Format display text for dropdown: "Place - Place_2" or just "Place" if Place_2 is empty
+  const formatTowerDisplay = (match: DoveMatch) => {
+    if (match.Place_2) {
+      return `${match.Place} - ${match.Place_2}`;
+    }
+    return match.Place;
+  };
 
   return (
     <div className="space-y-2">
@@ -104,7 +128,7 @@ export function DoveSearchSelect({
         </Button>
       </div>
 
-      {matches.length > 0 && (
+      {hasSearched && matches.length > 0 && (
         <div className="space-y-2">
           <Select value={selectedTowerId} onValueChange={handleSelectionChange}>
             <SelectTrigger>
@@ -113,7 +137,7 @@ export function DoveSearchSelect({
             <SelectContent>
               {matches.map((match) => (
                 <SelectItem key={match.TowerID} value={match.TowerID}>
-                  {match.Place} - {match.Dedication} (Score: {match.score.toFixed(1)})
+                  {formatTowerDisplay(match)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -143,6 +167,12 @@ export function DoveSearchSelect({
               <span>Verified</span>
             </div>
           )}
+        </div>
+      )}
+
+      {hasSearched && matches.length === 0 && !lookupMutation.isPending && (
+        <div className="text-sm text-muted-foreground">
+          No matches found. Try a different search term.
         </div>
       )}
     </div>

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DoveSearchSelect } from '@/components/dove-search-select';
 import { api } from '@/lib/api';
-import type { Tower, CacheEntry, CacheData } from '@/lib/types';
+import type { Tower, CacheEntry, CacheData, DoveMatch } from '@/lib/types';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 export default function TowersPage() {
@@ -16,6 +16,7 @@ export default function TowersPage() {
   const [towers, setTowers] = useState<Tower[]>([]);
   const [cacheKey, setCacheKey] = useState<string>('');
   const [cacheData, setCacheData] = useState<CacheData>({});
+  const [towerMatches, setTowerMatches] = useState<Record<string, DoveMatch[]>>({});
 
   // Load cache on mount
   const cacheQuery = useQuery({
@@ -61,9 +62,16 @@ export default function TowersPage() {
     }
   }, [cacheQuery.data]);
 
-  const handleCacheUpdate = (key: string, entry: CacheEntry) => {
+  const handleCacheUpdate = (key: string, entry: CacheEntry, matches: DoveMatch[]) => {
     setCacheData((prev) => ({ ...prev, [key]: entry }));
+    setTowerMatches((prev) => ({ ...prev, [key]: matches }));
     saveCacheMutation.mutate({ key, entry });
+  };
+
+  // Get the selected tower ID for display
+  const getSelectedTowerId = (towerUid: string): string => {
+    const key = `${cacheKey}:${towerUid}`;
+    return cacheData[key]?.selected || '';
   };
 
   if (towers.length === 0 && !cacheQuery.isLoading) {
@@ -110,6 +118,7 @@ export default function TowersPage() {
                     <TableHead>Address</TableHead>
                     <TableHead>Region</TableHead>
                     <TableHead>Tenor</TableHead>
+                    <TableHead>Dove Tower ID</TableHead>
                     <TableHead className="w-[400px]">Dove Search & Selection</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -123,6 +132,9 @@ export default function TowersPage() {
                         {tower.tenor_weight
                           ? `${tower.tenor_weight} kg`
                           : tower.tenor_raw}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {getSelectedTowerId(tower.uid) || '-'}
                       </TableCell>
                       <TableCell>
                         <DoveSearchSelect
