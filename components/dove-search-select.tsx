@@ -36,6 +36,7 @@ export function DoveSearchSelect({
         tenor_raw: tower.tenor_raw,
       }),
     onSuccess: (data) => {
+      console.log(`Dove lookup success for ${tower.place}:`, data);
       setMatches(data);
       // Auto-select first match if nothing selected
       if (data.length > 0 && !selectedTowerId) {
@@ -49,21 +50,27 @@ export function DoveSearchSelect({
         onUpdate(cacheKey, entry, data);
       }
     },
+    onError: (error) => {
+      console.error(`Dove lookup error for ${tower.place}:`, error);
+    },
   });
 
   // Load matches from cache if available
   useEffect(() => {
     if (initialCache && initialCache.selected) {
       // Trigger a search to populate matches from cache
+      console.log(`Auto-searching for ${tower.place} from cache`);
       lookupMutation.mutate();
     }
   }, []);
 
   const handleSearch = () => {
+    console.log(`Manual search triggered for ${tower.place} with query:`, searchQuery);
     lookupMutation.mutate();
   };
 
   const handleSelectionChange = (towerId: string) => {
+    console.log(`Selection changed for ${tower.place} to:`, towerId);
     setSelectedTowerId(towerId);
     const entry: CacheEntry = {
       search: searchQuery,
@@ -94,6 +101,8 @@ export function DoveSearchSelect({
     return match.Place;
   };
 
+  console.log(`Rendering DoveSearchSelect for ${tower.place}, matches count:`, matches.length);
+
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
@@ -121,10 +130,17 @@ export function DoveSearchSelect({
         </Button>
       </div>
 
-      {matches.length > 0 && (
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-500">
+          Matches: {matches.length} | Selected: {selectedTowerId || 'none'}
+        </div>
+      )}
+
+      {matches.length > 0 ? (
         <div className="space-y-2">
           <Select value={selectedTowerId} onValueChange={handleSelectionChange}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a tower" />
             </SelectTrigger>
             <SelectContent>
@@ -161,7 +177,7 @@ export function DoveSearchSelect({
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {lookupMutation.isError && (
         <div className="text-sm text-red-600">
